@@ -22,7 +22,10 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,12 +39,13 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mAlbumArt;
     private TextView mTitleTextView;
     private TextView mArtistTextView;
-    private ImageView mMediaControlsImage;
     private MediaSeekBar mSeekBarAudio;
+    private Button buttonPlayPause;
 
     private MediaBrowserAdapter mMediaBrowserAdapter;
 
     private boolean mIsPlaying;
+    private RecyclerView mTracks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,19 +60,13 @@ public class MainActivity extends AppCompatActivity {
         mTitleTextView = (TextView) findViewById(R.id.song_title);
         mArtistTextView = (TextView) findViewById(R.id.song_artist);
         mAlbumArt = (ImageView) findViewById(R.id.album_art);
-        mMediaControlsImage = (ImageView) findViewById(R.id.media_controls);
         mSeekBarAudio = (MediaSeekBar) findViewById(R.id.seekbar_audio);
+        mTracks = findViewById(R.id.tracks);
+        mTracks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        mTracks.setAdapter(new TracksAdapter());
 
-        final Button buttonPrevious = (Button) findViewById(R.id.button_previous);
-        buttonPrevious.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mMediaBrowserAdapter.getTransportControls().skipToPrevious();
-            }
-        });
-
-        final Button buttonPlay = (Button) findViewById(R.id.button_play);
-        buttonPlay.setOnClickListener(new View.OnClickListener() {
+        buttonPlayPause = (Button) findViewById(R.id.button_play_pause);
+        buttonPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mIsPlaying) {
@@ -79,13 +77,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final Button buttonNext = (Button) findViewById(R.id.button_next);
-        buttonNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mMediaBrowserAdapter.getTransportControls().skipToNext();
-            }
-        });
     }
 
     @Override
@@ -113,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
         public void onPlaybackStateChanged(PlaybackStateCompat playbackState) {
             mIsPlaying = playbackState != null &&
                     playbackState.getState() == PlaybackStateCompat.STATE_PLAYING;
-            mMediaControlsImage.setPressed(mIsPlaying);
+            buttonPlayPause.setText(mIsPlaying ? R.string.label_pause : R.string.label_play);
         }
 
         @Override
@@ -128,6 +119,23 @@ public class MainActivity extends AppCompatActivity {
             mAlbumArt.setImageBitmap(MusicLibrary.getAlbumBitmap(
                     MainActivity.this,
                     mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)));
+        }
+    }
+
+    private class TracksAdapter extends RecyclerView.Adapter {
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return null;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return 0;
         }
     }
 }

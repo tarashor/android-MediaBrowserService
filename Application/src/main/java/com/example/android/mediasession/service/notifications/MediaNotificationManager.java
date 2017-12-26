@@ -60,8 +60,6 @@ public class MediaNotificationManager {
 
     private final NotificationCompat.Action mPlayAction;
     private final NotificationCompat.Action mPauseAction;
-    private final NotificationCompat.Action mNextAction;
-    private final NotificationCompat.Action mPrevAction;
     private final NotificationManager mNotificationManager;
 
     public MediaNotificationManager(MusicService service) {
@@ -84,20 +82,6 @@ public class MediaNotificationManager {
                         MediaButtonReceiver.buildMediaButtonPendingIntent(
                                 mService,
                                 PlaybackStateCompat.ACTION_PAUSE));
-        mNextAction =
-                new NotificationCompat.Action(
-                        R.drawable.ic_skip_next_white_24dp,
-                        mService.getString(R.string.label_next),
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(
-                                mService,
-                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT));
-        mPrevAction =
-                new NotificationCompat.Action(
-                        R.drawable.ic_skip_previous_white_24dp,
-                        mService.getString(R.string.label_previous),
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(
-                                mService,
-                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS));
 
         // Cancel all notifications to handle the case where the Service was killed and
         // restarted by the system.
@@ -136,7 +120,7 @@ public class MediaNotificationManager {
         builder.setStyle(
                 new MediaStyle()
                         .setMediaSession(token)
-                        .setShowActionsInCompactView(0, 1, 2)
+                        .setShowActionsInCompactView(0)
                         // For backwards compatibility with Android L and earlier.
                         .setShowCancelButton(true)
                         .setCancelButtonIntent(
@@ -159,17 +143,10 @@ public class MediaNotificationManager {
                 // Show controls on lock screen even when user hides sensitive content.
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
-        // If skip to next action is enabled.
-        if ((state.getActions() & PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS) != 0) {
-            builder.addAction(mPrevAction);
-        }
+
 
         builder.addAction(isPlaying ? mPauseAction : mPlayAction);
 
-        // If skip to prev action is enabled.
-        if ((state.getActions() & PlaybackStateCompat.ACTION_SKIP_TO_NEXT) != 0) {
-            builder.addAction(mNextAction);
-        }
 
         return builder;
     }
