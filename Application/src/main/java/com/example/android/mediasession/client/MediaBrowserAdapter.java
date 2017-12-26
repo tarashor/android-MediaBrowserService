@@ -18,6 +18,8 @@ package com.example.android.mediasession.client;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -61,14 +63,11 @@ public class MediaBrowserAdapter {
     private final Context mContext;
     private final List<MediaBrowserChangeListener> mListeners = new ArrayList<>();
 
-    private final MediaBrowserConnectionCallback mMediaBrowserConnectionCallback =
-            new MediaBrowserConnectionCallback();
+    private final MusicServiceConnectionCallback playerServiceConnection =
+            new MusicServiceConnectionCallback();
     private final MediaControllerCallback mMediaControllerCallback =
             new MediaControllerCallback();
-    private final MediaBrowserSubscriptionCallback mMediaBrowserSubscriptionCallback =
-            new MediaBrowserSubscriptionCallback();
 
-    private MediaBrowserCompat mMediaBrowser;
 
     @Nullable
     private MediaControllerCompat mMediaController;
@@ -79,27 +78,19 @@ public class MediaBrowserAdapter {
     }
 
     public void onStart() {
-        if (mMediaBrowser == null) {
-            mMediaBrowser =
-                    new MediaBrowserCompat(
-                            mContext,
-                            new ComponentName(mContext, MusicService.class),
-                            mMediaBrowserConnectionCallback,
-                            null);
-            mMediaBrowser.connect();
-        }
+        mContext.bindService(MusicService.getIntent(mContext), playerServiceConnection, 0);
         Log.d(TAG, "onStart: Creating MediaBrowser, and connecting");
     }
 
     public void onStop() {
+
+        mContext.unbindService(playerServiceConnection);
+
         if (mMediaController != null) {
             mMediaController.unregisterCallback(mMediaControllerCallback);
             mMediaController = null;
         }
-        if (mMediaBrowser != null && mMediaBrowser.isConnected()) {
-            mMediaBrowser.disconnect();
-            mMediaBrowser = null;
-        }
+
         resetState();
         Log.d(TAG, "onStop: Releasing MediaController, Disconnecting from MediaBrowser");
     }
@@ -160,22 +151,24 @@ public class MediaBrowserAdapter {
 
     // Receives callbacks from the MediaBrowser when it has successfully connected to the
     // MediaBrowserService (MusicService).
-    public class MediaBrowserConnectionCallback extends MediaBrowserCompat.ConnectionCallback {
+    public class MusicServiceConnectionCallback implements ServiceConnection {
 
-        // Happens as a result of onStart().
         @Override
-        public void onConnected() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
             try {
+                MusicService playerService = ((MusicService.LocalBinder) service).getService();
+
+                mMediaController = new MediaControllerCompat(mContext, playerService.getMediaSessionToken());
+                //MediaControllerCompat.setMediaController(getActivity(), mMediaController);
+
+
                 // Get a MediaController for the MediaSession.
-                mMediaController = new MediaControllerCompat(mContext,
-                                                             mMediaBrowser.getSessionToken());
+                mMediaController = new MediaControllerCompat(mContext, playerService.getMediaSessionToken());
                 mMediaController.registerCallback(mMediaControllerCallback);
 
                 // Sync existing MediaSession state to the UI.
-                mMediaControllerCallback.onMetadataChanged(
-                        mMediaController.getMetadata());
-                mMediaControllerCallback
-                        .onPlaybackStateChanged(mMediaController.getPlaybackState());
+                mMediaControllerCallback.onMetadataChanged(mMediaController.getMetadata());
+                mMediaControllerCallback.onPlaybackStateChanged(mMediaController.getPlaybackState());
 
                 performOnAllListeners(new ListenerCommand() {
                     @Override
@@ -187,27 +180,11 @@ public class MediaBrowserAdapter {
                 Log.d(TAG, String.format("onConnected: Problem: %s", e.toString()));
                 throw new RuntimeException(e);
             }
-
-            mMediaBrowser.subscribe(mMediaBrowser.getRoot(), mMediaBrowserSubscriptionCallback);
         }
-    }
-
-    // Receives callbacks from the MediaBrowser when the MediaBrowserService has loaded new media
-    // that is ready for playback.
-    public class MediaBrowserSubscriptionCallback extends MediaBrowserCompat.SubscriptionCallback {
 
         @Override
-        public void onChildrenLoaded(@NonNull String parentId,
-                                     @NonNull List<MediaBrowserCompat.MediaItem> children) {
-            assert mMediaController != null;
+        public void onServiceDisconnected(ComponentName name) {
 
-            // Queue up all media items for this simple sample.
-            for (final MediaBrowserCompat.MediaItem mediaItem : children) {
-                mMediaController.addQueueItem(mediaItem.getDescription());
-            }
-
-            // Call "playFromMedia" so the UI is updated.
-            mMediaController.getTransportControls().prepare();
         }
     }
 
@@ -253,7 +230,7 @@ public class MediaBrowserAdapter {
         }
 
         private boolean isMediaIdSame(MediaMetadataCompat currentMedia,
-                                     MediaMetadataCompat newMedia) {
+                                      MediaMetadataCompat newMedia) {
             if (currentMedia == null || newMedia == null) {
                 return false;
             }

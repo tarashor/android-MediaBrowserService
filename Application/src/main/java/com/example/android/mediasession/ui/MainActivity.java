@@ -67,11 +67,12 @@ public class MainActivity extends AppCompatActivity {
         mSeekBarAudio = (MediaSeekBar) findViewById(R.id.seekbar_audio);
         RecyclerView mTracks = findViewById(R.id.tracks);
         mTracks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        mTracks.setAdapter(new TracksAdapter(new OnClickListener(){
+        mTracks.setAdapter(new TracksAdapter(new TracksAdapter.OnTrackClickListener(){
             @Override
-            public void onClick(View v) {
-
+            public void onClick(MediaBrowserCompat.MediaItem mediaItem) {
+                mMediaBrowserAdapter.getTransportControls().playFromMediaId(mediaItem.getMediaId(), null);
             }
+
         }));
 
         buttonPlayPause = (Button) findViewById(R.id.button_play_pause);

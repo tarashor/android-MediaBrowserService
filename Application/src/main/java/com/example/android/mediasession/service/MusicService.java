@@ -17,9 +17,14 @@
 package com.example.android.mediasession.service;
 
 import android.app.Notification;
+import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaBrowserServiceCompat;
@@ -36,7 +41,7 @@ import com.example.android.mediasession.service.players.MediaPlayerAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MusicService extends MediaBrowserServiceCompat {
+public class MusicService extends Service {
 
     private static final String TAG = MusicService.class.getSimpleName();
 
@@ -45,6 +50,8 @@ public class MusicService extends MediaBrowserServiceCompat {
     private MediaNotificationManager mMediaNotificationManager;
     private MediaSessionCallback mCallback;
     private boolean mServiceInStartedState;
+
+    private final IBinder localBinder = new LocalBinder();
 
     @Override
     public void onCreate() {
@@ -58,7 +65,7 @@ public class MusicService extends MediaBrowserServiceCompat {
                 MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
                 MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS |
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        setSessionToken(mSession.getSessionToken());
+        //setSessionToken(mSession.getSessionToken());
 
         mMediaNotificationManager = new MediaNotificationManager(this);
 
@@ -80,18 +87,19 @@ public class MusicService extends MediaBrowserServiceCompat {
         Log.d(TAG, "onDestroy: MediaPlayerAdapter stopped, and MediaSession released");
     }
 
+    @Nullable
     @Override
-    public BrowserRoot onGetRoot(@NonNull String clientPackageName,
-                                 int clientUid,
-                                 Bundle rootHints) {
-        return new BrowserRoot(MusicLibrary.getRoot(), null);
+    public IBinder onBind(Intent intent) {
+        return localBinder;
     }
 
-    @Override
-    public void onLoadChildren(
-            @NonNull final String parentMediaId,
-            @NonNull final Result<List<MediaBrowserCompat.MediaItem>> result) {
-        result.sendResult(MusicLibrary.getMediaItems());
+    public MediaSessionCompat.Token getMediaSessionToken() {
+        return mSession.getSessionToken();
+    }
+
+
+    public static Intent getIntent(Context mContext) {
+        return new Intent(mContext, MusicService.class);
     }
 
     // MediaSession Callback: Transport Controls -> MediaPlayerAdapter
@@ -126,6 +134,12 @@ public class MusicService extends MediaBrowserServiceCompat {
             if (!mSession.isActive()) {
                 mSession.setActive(true);
             }
+        }
+
+        @Override
+        public void onPlayFromMediaId(String mediaId, Bundle extras) {
+            super.onPlayFromMediaId(mediaId, extras);
+
         }
 
         @Override
@@ -211,7 +225,7 @@ public class MusicService extends MediaBrowserServiceCompat {
             private void moveServiceToStartedState(PlaybackStateCompat state) {
                 Notification notification =
                         mMediaNotificationManager.getNotification(
-                                mPlayback.getCurrentMedia(), state, getSessionToken());
+                                mPlayback.getCurrentMedia(), state, mSession.getSessionToken());
 
                 if (!mServiceInStartedState) {
                     ContextCompat.startForegroundService(
@@ -227,7 +241,7 @@ public class MusicService extends MediaBrowserServiceCompat {
                 stopForeground(false);
                 Notification notification =
                         mMediaNotificationManager.getNotification(
-                                mPlayback.getCurrentMedia(), state, getSessionToken());
+                                mPlayback.getCurrentMedia(), state, mSession.getSessionToken());
                 mMediaNotificationManager.getNotificationManager()
                         .notify(MediaNotificationManager.NOTIFICATION_ID, notification);
             }
@@ -241,4 +255,9 @@ public class MusicService extends MediaBrowserServiceCompat {
 
     }
 
+    public class LocalBinder extends Binder {
+        public MusicService getService() {
+            return MusicService.this;
+        }
+    }
 }

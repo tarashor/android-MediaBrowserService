@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.QuickContactBadge;
 import android.widget.TextView;
 
 import com.example.android.mediasession.R;
@@ -19,9 +20,9 @@ import java.util.List;
 
 public class TracksAdapter extends RecyclerView.Adapter {
     private final List<MediaBrowserCompat.MediaItem> items;
-    private final View.OnClickListener onClickListener;
+    private final OnTrackClickListener onClickListener;
 
-    public TracksAdapter(View.OnClickListener onClickListener){
+    public TracksAdapter(OnTrackClickListener onClickListener){
         this.onClickListener = onClickListener;
         items =  MusicLibrary.getMediaItems();
     }
@@ -29,7 +30,6 @@ public class TracksAdapter extends RecyclerView.Adapter {
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.track, parent, false);
-        view.setOnClickListener(onClickListener);
         return new TrackViewHolder(view);
     }
 
@@ -44,7 +44,7 @@ public class TracksAdapter extends RecyclerView.Adapter {
         return items.size();
     }
 
-    private static class TrackViewHolder extends RecyclerView.ViewHolder{
+    private class TrackViewHolder extends RecyclerView.ViewHolder{
 
         private TextView trackNameTextView;
 
@@ -53,10 +53,22 @@ public class TracksAdapter extends RecyclerView.Adapter {
             trackNameTextView = itemView.findViewById(R.id.track_name_txt);
         }
 
-        public void bind(MediaBrowserCompat.MediaItem mediaItem){
+        public void bind(final MediaBrowserCompat.MediaItem mediaItem){
             String mediaId = mediaItem.getDescription().getMediaId();
             String title = MusicLibrary.getMetadata(itemView.getContext(), mediaId).getString(MediaMetadataCompat.METADATA_KEY_TITLE);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (onClickListener != null){
+                        onClickListener.onClick(mediaItem);
+                    }
+                }
+            });
             trackNameTextView.setText(title);
         }
+    }
+
+    public interface OnTrackClickListener{
+        void onClick(MediaBrowserCompat.MediaItem mediaItem);
     }
 }
