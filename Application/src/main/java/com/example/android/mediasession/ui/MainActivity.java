@@ -18,6 +18,7 @@ package com.example.android.mediasession.ui;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -25,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -34,7 +36,10 @@ import com.example.android.mediasession.R;
 import com.example.android.mediasession.client.MediaBrowserAdapter;
 import com.example.android.mediasession.service.contentcatalogs.MusicLibrary;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
+
 
     private ImageView mAlbumArt;
     private TextView mTitleTextView;
@@ -45,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     private MediaBrowserAdapter mMediaBrowserAdapter;
 
     private boolean mIsPlaying;
-    private RecyclerView mTracks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,12 +65,17 @@ public class MainActivity extends AppCompatActivity {
         mArtistTextView = (TextView) findViewById(R.id.song_artist);
         mAlbumArt = (ImageView) findViewById(R.id.album_art);
         mSeekBarAudio = (MediaSeekBar) findViewById(R.id.seekbar_audio);
-        mTracks = findViewById(R.id.tracks);
+        RecyclerView mTracks = findViewById(R.id.tracks);
         mTracks.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        mTracks.setAdapter(new TracksAdapter());
+        mTracks.setAdapter(new TracksAdapter(new OnClickListener(){
+            @Override
+            public void onClick(View v) {
+
+            }
+        }));
 
         buttonPlayPause = (Button) findViewById(R.id.button_play_pause);
-        buttonPlayPause.setOnClickListener(new View.OnClickListener() {
+        buttonPlayPause.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (mIsPlaying) {
@@ -122,20 +131,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class TracksAdapter extends RecyclerView.Adapter {
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return null;
-        }
 
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-
-        }
-
-        @Override
-        public int getItemCount() {
-            return 0;
-        }
-    }
 }
