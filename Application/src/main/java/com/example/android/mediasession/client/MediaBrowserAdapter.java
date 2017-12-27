@@ -68,7 +68,6 @@ public class MediaBrowserAdapter {
     private final MediaControllerCallback mMediaControllerCallback =
             new MediaControllerCallback();
 
-
     @Nullable
     private MediaControllerCompat mMediaController;
 
@@ -78,7 +77,7 @@ public class MediaBrowserAdapter {
     }
 
     public void onStart() {
-        mContext.bindService(MusicService.getIntent(mContext), playerServiceConnection, 0);
+        mContext.bindService(MusicService.getIntent(mContext), playerServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d(TAG, "onStart: Creating MediaBrowser, and connecting");
     }
 
